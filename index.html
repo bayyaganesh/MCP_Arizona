@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arizona Plumbing Pros - Emergency Services</title>
+
+  <!-- Core Styles -->
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; }
+    header { background-color: #002855; color: white; padding: 10px 0; text-align: center; font-size: 14px; }
+    nav { display: flex; flex-wrap: wrap; justify-content: center; background-color: #004080; }
+    .nav-item > a { padding: 15px 20px; color: white; text-decoration: none; white-space: nowrap; }
+    .nav-item > a:hover { background-color: #0066cc; }
+    .hero { background: #257dd4; color: white; text-align: center; padding: 80px 20px; position: relative; }
+    .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); }
+    .hero * { position: relative; z-index: 1; }
+    .hero h1 { font-size: 48px; margin: 0; }
+    .hero p { font-size: 20px; margin-top: 10px; }
+    .cta-buttons { margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .cta-buttons a { background-color: #ff4d4d; color: white; padding: 12px 24px; border-radius: 4px; text-decoration: none; min-width: 140px; text-align: center; }
+    .ai-assistant { margin-top: 30px; display: flex; justify-content: center; gap: 15px; }
+    .ai-btn { background: #002855; color: white; border: none; padding: 12px 20px; border-radius: 50px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; transition: all 0.3s; }
+    .ai-btn:hover { background: #0066cc; transform: scale(1.05); }
+    .section { padding: 40px 20px; text-align: center; background: white; }
+    .section h2 { color: #004080; }
+    .features { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+    .feature-box { background: #f1f7ff; border-radius: 8px; padding: 20px; min-width: 250px; max-width: 300px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+    .emergency-section { background: #f8f9fa; padding: 20px; text-align: center; border-bottom: 1px solid #ddd; }
+    .emergency-buttons { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
+    .emergency-btn { padding: 15px 25px; color: white; border-radius: 6px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; min-width: 200px; justify-content: center; text-decoration: none; }
+    .plumbing { background: #e74c3c; }
+    .electrical { background: #f39c12; }
+    .heating { background: #3498db; }
+    footer { background-color: #2c2f3a; color: #ccc; padding: 40px 20px; }
+    .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 40px; }
+    .footer-section h4 { color: white; }
+    .footer-section a { color: #ccc; text-decoration: none; display: block; margin-bottom: 5px; }
+    .footer-section a:hover { color: white; }
+    .social-icons img { height: 30px; margin: 5px; transition: transform 0.3s; }
+    .social-icons img:hover { transform: scale(1.1); }
+    .footer-bottom { text-align: center; color: #aaa; font-size: 14px; margin-top: 40px; padding-top: 20px; border-top: 1px solid #444; }
+    #pipepal-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
+    .pipepal-hidden { display: none; }
+    @media (max-width:768px) {
+      .emergency-buttons, .ai-assistant { flex-direction: column; align-items: center; }
+      .emergency-btn { width: 100%; }
+    }
+  </style>
+
+  <!-- 1) Load the PipePal API (defines window.PipePal) -->
+  <script src="/pipepal.js" defer></script>
+</head>
+
+<body>
+  <header>⭐ 4.8 Star Rated | Call (520) 333-2121 | 24/7 Emergency Plumbing</header>
+
+  <nav>
+    <div class="nav-item"><a href="#">Home</a></div>
+    <div class="nav-item"><a href="plumbing.html">Plumbing</a></div>
+    <div class="nav-item"><a href="heating-cooling.html">Heating & Cooling</a></div>
+    <div class="nav-item"><a href="electrical.html">Electrical</a></div>
+    <div class="nav-item"><a href="commercial.html">Commercial</a></div>
+    <div class="nav-item"><a href="service-area.html">Service Area</a></div>
+    <div class="nav-item"><a href="membership.html">Membership</a></div>
+    <div class="nav-item"><a href="about-us.html">About Us</a></div>
+  </nav>
+
+  <section class="hero">
+    <h1>Arizona Plumbing Pros</h1>
+    <p>Now with AI-Powered Emergency Assistance</p>
+    <div class="cta-buttons">
+      <a href="quote-form.html">Free Estimate</a>
+      <a href="membership.html">Join Membership</a>
+    </div>
+    <div class="ai-assistant">
+      <button class="ai-btn" id="ai-voice-btn">🎤 Voice Help</button>
+      <button class="ai-btn" onclick="openPhotoDiagnosis()">📷 Photo Diagnosis</button>
+    </div>
+  </section>
+
+  <section class="emergency-section">
+    <h2>24/7 Emergency Services</h2>
+    <p>Immediate assistance for urgent issues</p>
+    <div class="emergency-buttons">
+      <a href="tel:5203332121" class="emergency-btn plumbing">🚰 Plumbing Emergency</a>
+      <a href="tel:5203332121" class="emergency-btn electrical">⚡ Electrical Emergency</a>
+      <a href="tel:5203332121" class="emergency-btn heating">🔥 HVAC Emergency</a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Why Choose Us</h2>
+    <div class="features">
+      <div class="feature-box">✅ Licensed & Insured</div>
+      <div class="feature-box">🚨 24/7 Emergency Response</div>
+      <div class="feature-box">🤖 AI-Powered Diagnostics</div>
+    </div>
+  </section>
+
+  <!-- 2) Widget will be injected here -->
+  <div id="pipepal-container"></div>
+
+  <!-- 3) Bootstrapping Module -->
+  <script type="module">
+    (async () => {
+      console.log('🛠️  Bootstrapping PipePal...');
+
+      // Inject widget HTML + CSS
+      try {
+        const tpl = await fetch('/pipepal.html').then(r => r.text());
+        document.getElementById('pipepal-container').innerHTML = tpl;
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/pipepal.css';
+        document.head.appendChild(link);
+      } catch (e) {
+        console.error('❌ Failed to load PipePal template or CSS', e);
+        return;
+      }
+
+      // Fetch your tenant’s config
+      const cfgRes = await fetch(
+        `http://localhost:3000/tenant-config?host=${window.location.host}`
+      );
+      if (!cfgRes.ok) {
+        console.error('❌ tenant-config fetch failed', cfgRes.status);
+        return;
+      }
+      const cfg = await cfgRes.json();
+
+      // Grab the global PipePal
+      const PipePal = window.PipePal;
+      if (!PipePal) {
+        console.error('❌ PipePal API not found');
+        return;
+      }
+      console.log('✅ PipePal loaded', PipePal);
+
+      // Initialize & wire onMessage
+      PipePal.init({
+        webhookURL: cfg.n8nWebhookURL,
+        theme:      { primaryColor: cfg.theme.primaryColor },
+        botName:    cfg.theme.botName
+      });
+      PipePal.onMessage = async text => {
+        const resp = await fetch(cfg.n8nWebhookURL, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ tenantId: cfg.tenantId, text })
+        });
+        return resp.json();
+      };
+    })();
+
+    // photo‐diagnosis stub that lets both camera + upload on mobile
+    function openPhotoDiagnosis() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      // On iOS this prompts "Take Photo or Video" + "Photo Library"
+      input.click();
+      input.onchange = e => console.log('📷 Selected image', e.target.files[0]);
+    }
+  </script>
+
+  <!-- Voice Handler -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const aiBtn = document.getElementById('ai-voice-btn');
+      if (!aiBtn) return;
+      aiBtn.addEventListener('click', () => {
+        if (!('webkitSpeechRecognition' in window)) {
+          alert('Voice commands require Chrome or Edge');
+          return;
+        }
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.start();
+        recognition.onresult = e => {
+          const t = e.results[0][0].transcript;
+          const inp = document.getElementById('pipepal-user-input');
+          if (inp) inp.value = t, document.getElementById('pipepal-send').click();
+        };
+      });
+    });
+  </script>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-section">
+        <h4>CONTACT US</h4>
+        <p>5141 N Casa Grande Hwy<br />Tucson, AZ 85743</p>
+        <p>📞 520.333.2121</p>
+        <p>
+          ROC #113429<br />ROC #113428<br />ROC #117826<br />
+          ROC #117825<br />ROC #154634
+        </p>
+      </div>
+      <div class="footer-section">
+        <h4>OUR SERVICES</h4>
+        <a href="plumbing.html">Plumbing</a>
+        <a href="heating-cooling.html">Heating & Cooling</a>
+        <a href="electrical.html">Electrical</a>
+        <a href="repipe.html">Repipe</a>
+        <a href="water-heater.html">Water Heaters</a>
+      </div>
+      <div class="footer-section">
+        <h4>QUICK LINKS</h4>
+        <a href="index.html">Home</a>
+        <a href="about-us.html">About Us</a>
+        <a href="quote-form.html">Free Quotes</a>
+        <a href="#">Careers</a>
+        <a href="#">Customer Survey</a>
+      </div>
+      <div class="footer-section">
+        <h4>AWARDS</h4>
+        <img src="BBB.png" alt="BBB Accredited" style="height:40px;" />
+        <img src="carier.jfif" alt="Carrier Partner" style="height:40px;" />
+        <p>BBB Rating: A+</p>
+        <div class="social-icons">
+          <img src="facebook.png" alt="Facebook" />
+          <img src="youtube.png" alt="YouTube" />
+          <img src="instagram.jfif" alt="Yelp" />
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">&copy; 2025 Arizona Plumbing Pros. All rights reserved.</div>
+  </footer>
+</body>
+</html>
