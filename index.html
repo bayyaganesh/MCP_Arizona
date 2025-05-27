@@ -99,49 +99,54 @@
     </div>
   </section>
 
-  <!-- 2) Widget will be injected here -->
+  <!-- 2) Container for the chat widget -->
   <div id="pipepal-container"></div>
 
   <!-- 3) Bootstrapping Module -->
   <script type="module">
     (async () => {
-      console.log('🛠️  Bootstrapping PipePal...');
+      console.log('🛠️ Bootstrapping PipePal…');
 
-      // Inject widget HTML + CSS
+      // — Inject widget HTML + CSS
       try {
         const tpl = await fetch('/pipepal.html').then(r => r.text());
         document.getElementById('pipepal-container').innerHTML = tpl;
         const link = document.createElement('link');
-        link.rel = 'stylesheet';
+        link.rel  = 'stylesheet';
         link.href = '/pipepal.css';
         document.head.appendChild(link);
-      } catch (e) {
-        console.error('❌ Failed to load PipePal template or CSS', e);
+      } catch (err) {
+        console.error('❌ Failed to load PipePal template or CSS', err);
         return;
       }
 
-      // Fetch your tenant’s config
-      const cfgRes = await fetch(`/api/tenant-config?host=${window.location.host}`);
-      if (!cfgRes.ok) {
-        console.error('❌ tenant-config fetch failed', cfgRes.status);
+      // — Fetch tenant config
+      let cfg;
+      try {
+        const res = await fetch(`/api/tenant-config?host=${window.location.host}`);
+        if (!res.ok) throw new Error(res.status);
+        cfg = await res.json();
+      } catch (err) {
+        console.error('❌ tenant-config fetch failed', err);
         return;
       }
-      const cfg = await cfgRes.json();
 
-      // Grab the global PipePal
+      // — Grab global PipePal
       const PipePal = window.PipePal;
       if (!PipePal) {
-        console.error('❌ PipePal API not found');
+        console.error('❌ PipePal API not found on window');
         return;
       }
       console.log('✅ PipePal loaded', PipePal);
 
-      // Initialize & wire onMessage
+      // — Initialize widget
       PipePal.init({
         webhookURL: cfg.n8nWebhookURL,
         theme:      { primaryColor: cfg.theme.primaryColor },
         botName:    cfg.theme.botName
       });
+
+      // — Wire onMessage
       PipePal.onMessage = async text => {
         const resp = await fetch(cfg.n8nWebhookURL, {
           method:  'POST',
@@ -152,12 +157,12 @@
       };
     })();
 
-    // photo-diagnosis stub that lets both camera + upload on mobile
+    // Photo-diagnosis stub (camera + library on mobile)
     function openPhotoDiagnosis() {
       const input = document.createElement('input');
       input.type   = 'file';
       input.accept = 'image/*';
-      input.click();                // iOS will show “Take Photo” + “Photo Library”
+      input.click();
       input.onchange = e => console.log('📷 Selected image', e.target.files[0]);
     }
   </script>
@@ -172,10 +177,10 @@
           alert('Voice commands require Chrome or Edge');
           return;
         }
-        const recognition = new webkitSpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.start();
-        recognition.onresult = e => {
+        const rec = new webkitSpeechRecognition();
+        rec.lang = 'en-US';
+        rec.start();
+        rec.onresult = e => {
           const t = e.results[0][0].transcript;
           const inp = document.getElementById('pipepal-user-input');
           if (inp) inp.value = t, document.getElementById('pipepal-send').click();

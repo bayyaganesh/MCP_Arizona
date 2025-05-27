@@ -1,19 +1,24 @@
 <!-- pipepal.html -->
 <div id="pipepal-widget">
-  <div id="pipepal-toggle">Assistance</div>
+  <!-- Toggle button -->
+  <button id="pipepal-toggle">Assistance</button>
+
+  <!-- Chat window (hidden by default) -->
   <div id="pipepal-chat" class="pipepal-hidden">
+    <!-- Header with title, badges (for status), voice toggle, and close -->
     <div id="pipepal-header">
-      <span>🤖 Pipepal</span>
+      <span>🤖 PipePal</span>
       <div id="pipepal-badges"></div>
       <button id="pipepal-voice-toggle" title="Toggle Voice">🔊</button>
-      <button id="pipepal-close">✖</button>
+      <button id="pipepal-close" title="Close">✖</button>
     </div>
 
-    <!-- 1) Scrollable message area -->
-    <div id="pipepal-body"></div>
+    <!-- 1) Scrollable messages -->
+    <div id="pipepal-body" class="pipepal-body"></div>
 
-    <!-- 2) Static footer: wrap both buttons & input here -->
+    <!-- 2) Footer: quick buttons + input area -->
     <div class="pipepal-footer">
+      <!-- Quick-reply buttons -->
       <div class="pipepal-quick-buttons">
         <button>Book Appointment</button>
         <button>Get Quote</button>
@@ -22,15 +27,21 @@
         <button class="emergency-btn electrical">Electrical Emergency</button>
         <button class="emergency-btn heating">Heating Emergency</button>
       </div>
-      <!-- NEW: autocomplete wrapper -->
-      <div id="pipepal-input-container">
-        <input id="pipepal-user-input" type="text" placeholder="Type your message…" autocomplete="off" />
-        <button id="pipepal-send">➤</button>
+
+      <!-- Input + send + autocomplete -->
+      <div id="pipepal-input-container" class="pipepal-input-container">
+        <input
+          id="pipepal-user-input"
+          type="text"
+          placeholder="Type your message…"
+          autocomplete="off"
+        />
+        <button id="pipepal-send" title="Send">➤</button>
         <div id="autocomplete-suggestions" class="autocomplete-list"></div>
       </div>
-        
+    </div>
 
-    <!-- Typing indicator (can float above footer if you like) -->
-    <div id="pipepal-typing">Pipepal is typing...</div>
+    <!-- Typing indicator -->
+    <div id="pipepal-typing" class="pipepal-typing">PipePal is typing...</div>
   </div>
 </div>
