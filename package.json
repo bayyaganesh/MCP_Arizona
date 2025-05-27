@@ -1,0 +1,23 @@
+{
+  "name": "mcp_arizona",
+  "version": "1.0.0",
+  "description": "MCP ChatBOT Demo",
+  "main": "pipepal.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bayyaganesh/MCP_Arizona.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bayyaganesh/MCP_Arizona/issues"
+  },
+  "homepage": "https://github.com/bayyaganesh/MCP_Arizona#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.8"
+  }
+}
