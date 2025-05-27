@@ -9,7 +9,7 @@
     console.log("✅ PipePal JS Loaded");
 
     // ── CONFIG ───────────────────────────────────────────────────────────────────
-    const WEBHOOK_URL  = 'https://haneshbb.app.n8n.cloud/webhook-test/pipepal-sosy';
+    const WEBHOOK_URL  = 'https://haneshbb.app.n8n.cloud/webhook/pipepal-sosy';
     const TECH_WEBHOOK = 'https://haneshbb.app.n8n.cloud/webhook/receive-ticket';
     const APPT_WEBHOOK = 'https://haneshbb.app.n8n.cloud/webhook/log-lead';
     const STORAGE_KEY  = 'pipepal_chat_history';
