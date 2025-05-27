@@ -297,8 +297,14 @@ async function handleAppointmentFlow(answer) {
           return;
         }
 
-        const reply = stripEmojis(data.reply || data.customerMessage || '');
-        if (reply) showBotMessage(reply, /<[^>]+>/.test(reply));
+        // normal AI reply
+        const reply = data.reply || data.customerMessage;
+        if (reply) {
+        showBotMessage(reply, /<[^>]+>/.test(reply));
+        } else {
+  // **FALLBACK** when no reply was provided
+  showBotMessage("Thanks, our emergency team has been notified and will reach out shortly.");
+}
       }
       catch (err) {
         console.error('❌ Error in processUserInput:', err);
