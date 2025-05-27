@@ -315,5 +315,5 @@
   // ── EXPORT & GLOBAL ──────────────────────────────────────────────────────────
   const PipePal = { init: initPipepal };
   window.PipePal = PipePal;
-  document.addEventListener('DOMContentLoaded', initPipepal);
+  // document.addEventListener('DOMContentLoaded', initPipepal);
 })();
