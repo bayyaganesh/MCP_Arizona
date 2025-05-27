@@ -207,7 +207,7 @@
     function forwardToTech(notes) {
       const fd = new FormData();
       ['Issue','CustomerID','Phone','Email','Name']
-        .forEach(k => fd.append(k, context[k]||''));
+        .forEach(k => fd.append(k, context[k]||''));  
       fd.append('notes', notes || '');
       if (fileInput.files[0]) fd.append('imageFile', fileInput.files[0]);
       fetch(TECH_WEBHOOK, { method: 'POST', body: fd })
@@ -256,8 +256,8 @@
 
       // 3) build payload
       const fd = new FormData();
-      if (text) fd.append('message', text);
-      if (fileInput.files[0]) fd.append('imageFile', fileInput.files[0]);
+      if (text)                   fd.append('message', text);
+      if (fileInput.files[0])     fd.append('imageFile', fileInput.files[0]);
       fd.append('context', JSON.stringify(context));
 
       // 4) call your AI webhook
@@ -266,8 +266,7 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const txt = await res.text();
         let data = {};
-        try { data = JSON.parse(txt); }
-        catch { console.warn('Malformed JSON:', txt); }
+        try { data = JSON.parse(txt); } catch { console.warn('Malformed JSON:', txt); }
         if (Array.isArray(data)) data = data[0] || {};
 
         // emergency response
