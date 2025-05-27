@@ -121,9 +121,7 @@
       }
 
       // Fetch your tenant’s config
-      const cfgRes = await fetch(
-        `http://localhost:3000/tenant-config?host=${window.location.host}`
-      );
+      const cfgRes = await fetch(`/api/tenant-config?host=${window.location.host}`);
       if (!cfgRes.ok) {
         console.error('❌ tenant-config fetch failed', cfgRes.status);
         return;
@@ -154,13 +152,12 @@
       };
     })();
 
-    // photo‐diagnosis stub that lets both camera + upload on mobile
+    // photo-diagnosis stub that lets both camera + upload on mobile
     function openPhotoDiagnosis() {
       const input = document.createElement('input');
-      input.type = 'file';
+      input.type   = 'file';
       input.accept = 'image/*';
-      // On iOS this prompts "Take Photo or Video" + "Photo Library"
-      input.click();
+      input.click();                // iOS will show “Take Photo” + “Photo Library”
       input.onchange = e => console.log('📷 Selected image', e.target.files[0]);
     }
   </script>
