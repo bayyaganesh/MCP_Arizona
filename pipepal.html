@@ -1,16 +1,16 @@
 <!-- pipepal.html -->
 <div id="pipepal-widget">
   <!-- Toggle button -->
-  <button id="pipepal-toggle">Assistance</button>
+  <button id="pipepal-toggle" class="pipepal-toggle">Assistance</button>
 
   <!-- Chat window (hidden by default) -->
-  <div id="pipepal-chat" class="pipepal-hidden">
+  <div id="pipepal-chat" class="pipepal-hidden pipepal-chat">
     <!-- Header with title, badges (for status), voice toggle, and close -->
-    <div id="pipepal-header">
-      <span>🤖 PipePal</span>
-      <div id="pipepal-badges"></div>
-      <button id="pipepal-voice-toggle" title="Toggle Voice">🔊</button>
-      <button id="pipepal-close" title="Close">✖</button>
+    <div id="pipepal-header" class="pipepal-header">
+      <span class="pipepal-title">🤖 PipePal</span>
+      <div id="pipepal-badges" class="pipepal-badges"></div>
+      <button id="pipepal-voice-toggle" class="pipepal-voice-toggle" title="Toggle Voice">🔊</button>
+      <button id="pipepal-close" class="pipepal-close" title="Close">✖</button>
     </div>
 
     <!-- 1) Scrollable messages -->
@@ -32,11 +32,12 @@
       <div id="pipepal-input-container" class="pipepal-input-container">
         <input
           id="pipepal-user-input"
+          class="pipepal-input"
           type="text"
           placeholder="Type your message…"
           autocomplete="off"
         />
-        <button id="pipepal-send" title="Send">➤</button>
+        <button id="pipepal-send" class="pipepal-send" title="Send">➤</button>
         <div id="autocomplete-suggestions" class="autocomplete-list"></div>
       </div>
     </div>

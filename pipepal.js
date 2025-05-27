@@ -1,7 +1,7 @@
 /**
  * pipepal.js
  * Full PipePal widget implementation for Arizona Plumbing Pros
- * Updated to avoid persisting Blob URLs (only text messages are stored).
+ * Author: Updated by ChatGPT
  */
 (function() {
   // ── ENTRYPOINT ────────────────────────────────────────────────────────────────
@@ -121,7 +121,6 @@
       img.style.margin = '8px 0';
       wrapper.appendChild(img);
       bodyEl.appendChild(wrapper);
-      // **no persistence for images**
       bodyEl.scrollTop = bodyEl.scrollHeight;
     }
 
@@ -145,7 +144,6 @@
             m.textContent = data.content;
             bodyEl.appendChild(m);
           }
-          // skip images (transient)
         } else if (role === 'bot') {
           const m = document.createElement('div');
           m.className = 'pipepal-msg pipepal-bot';
@@ -181,17 +179,14 @@
           context.IntentName = 'appointment';
           context.State      = 'APPT_NAME';
           showBotMessage("Sure—what's your full name?");
-        }
-        else if (intent === 'connect_human') {
+        } else if (intent === 'connect_human') {
           showBotMessage('One moment—connecting you to a live agent…');
           forwardToTech('Live Agent');
-        }
-        else if (intent === 'emergency') {
+        } else if (intent === 'emergency') {
           showBotMessage('Connecting you directly to our 24/7 emergency line…', false);
           forwardToTech('Emergency');
           window.location.href = 'tel:5203332121';
-        }
-        else {
+        } else {
           inputField.value = txt;
           sendBtn.click();
         }
@@ -238,13 +233,11 @@
         context.Name  = answer;
         context.State = 'APPT_PHONE';
         showBotMessage('Thanks! Can I get your phone number?');
-      }
-      else if (context.State === 'APPT_PHONE') {
+      } else if (context.State === 'APPT_PHONE') {
         context.Phone = answer;
         context.State = 'APPT_EMAIL';
         showBotMessage("Great—what's your email?");
-      }
-      else if (context.State === 'APPT_EMAIL') {
+      } else if (context.State === 'APPT_EMAIL') {
         context.Email = answer;
         showBotMessage('All set! Here’s your booking link:');
         showBotMessage('<a href="https://yourbooking.link" target="_blank">📅 Book an Appointment</a>', true);
@@ -282,8 +275,7 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const txt = await res.text();
         let data = {};
-        try { data = JSON.parse(txt); }
-        catch { console.warn('Malformed JSON:', txt); }
+        try { data = JSON.parse(txt); } catch { console.warn('Malformed JSON:', txt); }
         if (Array.isArray(data)) data = data[0] || {};
 
         // emergency
@@ -300,14 +292,10 @@
         // normal reply
         const reply = data.reply || data.customerMessage || '';
         if (reply) showBotMessage(reply, /<[^>]+>/.test(reply));
-      }
-      catch (err) {
+      } catch (err) {
         console.error('❌ Error in processUserInput:', err);
         showBotMessage(`⚠️ Error: ${err.message}`, false);
       }
-
-      // clear upload
-      fileInput.value = '';
     }
   }
 
