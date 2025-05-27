@@ -1,26 +1,32 @@
-// api/tenant-config.js
-import { createClient } from '@supabase/supabase-js';
+// /api/tenant-config.js
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+)
 
 export default async function handler(req, res) {
-  const { host } = req.query;
-  if (!host) return res.status(400).json({ error: 'Missing host parameter' });
+  try {
+    const { host } = req.query
+    if (!host) {
+      return res.status(400).json({ error: 'Missing host query parameter' })
+    }
 
-  // Initialize Supabase client
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_ANON_KEY;
-  const sb = createClient(supabaseUrl, supabaseKey);
+    // Adjust the table/name columns to match your Supabase schema
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('tenantId, n8nWebhookURL, theme')
+      .eq('domain', host)
+      .single()
 
-  // Fetch tenant by domain
-  const { data, error } = await sb
-    .from('tenants')
-    .select('id,name,domain,api_key,n8n_webhook_url,theme')
-    .eq('domain', host)
-    .single();
-
-  if (error || !data) {
-    return res.status(404).json({ error: 'Tenant not found' });
+    if (error) {
+      console.error('Supabase error:', error)
+      return res.status(500).json({ error: error.message })
+    }
+    return res.status(200).json(data)
+  } catch (err) {
+    console.error('Unexpected error:', err)
+    return res.status(500).json({ error: 'Internal server error' })
   }
-
-  const { id: tenantId, n8n_webhook_url: n8nWebhookURL, theme } = data;
-  return res.json({ tenantId, n8nWebhookURL, theme });
 }
