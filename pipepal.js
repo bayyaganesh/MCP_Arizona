@@ -28,11 +28,20 @@
     function loadUserData()  { try { return JSON.parse(localStorage.getItem(USER_KEY)) || {}; } catch { return {}; } }
 
     function speakText(text) {
-      if (!voiceEnabled || !('speechSynthesis' in window)) return;
-      const clean = text.replace(/<[^>]+>/g, '');
-      const utter = new SpeechSynthesisUtterance(clean);
-      utter.lang = 'en-US';
-      speechSynthesis.speak(utter);
+  // if voice is muted, bail out
+  if (voiceToggle.textContent === '🔇') return;
+
+  if (!('speechSynthesis' in window)) return;
+
+  // remove HTML tags, then strip most emoji codepoints
+  let clean = text
+    .replace(/<[^>]+>/g, '')
+    // remove emojis in the U+1F300–1F6FF, U+1F900–1F9FF, U+2600–U+26FF ranges:
+    .replace(/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}]/gu, '');
+
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.lang = 'en-US';
+  speechSynthesis.speak(utter);
     }
 
     // strip all emojis & icons at start of each line
