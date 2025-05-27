@@ -1,7 +1,7 @@
 /**
  * pipepal.js
  * Full PipePal widget implementation for Arizona Plumbing Pros
- * Updated to support image thumbnails, appointment flow, emergencies, etc.
+ * Updated to avoid persisting Blob URLs (only text messages are stored).
  */
 (function() {
   // ── ENTRYPOINT ────────────────────────────────────────────────────────────────
@@ -67,7 +67,7 @@
     const headerEl    = document.getElementById('pipepal-header');
     let voiceToggle   = document.getElementById('pipepal-voice-toggle');
 
-    // Add voice toggle button
+    // Add voice toggle button if missing
     if (headerEl && !voiceToggle) {
       voiceToggle = document.createElement('button');
       voiceToggle.id = 'pipepal-voice-toggle';
@@ -76,14 +76,15 @@
       headerEl.appendChild(voiceToggle);
     }
 
-    if (![toggleBtn, chatWindow, closeBtn, sendBtn, inputField, bodyEl, typingEl, voiceToggle].every(el => el)) {
+    if (![toggleBtn, chatWindow, closeBtn, sendBtn, inputField, bodyEl, typingEl, voiceToggle]
+          .every(el => el)) {
       console.warn('❌ Missing elements for PipePal widget');
       return;
     }
 
     // ── SHOW/HIDE ────────────────────────────────────────────────────────────────
     toggleBtn.addEventListener('click', () => chatWindow.classList.toggle('pipepal-hidden'));
-    closeBtn.addEventListener('click', () => chatWindow.classList.add('pipepal-hidden'));
+    closeBtn.addEventListener('click',  () => chatWindow.classList.add('pipepal-hidden'));
 
     // ── VOICE TOGGLE ─────────────────────────────────────────────────────────────
     voiceToggle.addEventListener('click', () => {
@@ -91,48 +92,69 @@
       voiceToggle.textContent = voiceToggle.textContent === '🔊' ? '🔇' : '🔊';
     });
 
-    // ── MESSAGE RENDERING ─────────────────────────────────────────────────────────
-    function persistMessage(role, html) {
+    // ── MESSAGE PERSISTENCE ───────────────────────────────────────────────────────
+    function persistMessage(role, data) {
       const hist = loadHistory();
-      hist.push({ role, html });
+      hist.push({ role, data });
       saveHistory(hist);
     }
+
+    // ── MESSAGE RENDERING ─────────────────────────────────────────────────────────
     function showUserMessageText(text) {
       const msg = document.createElement('div');
       msg.className = 'pipepal-msg pipepal-user';
       msg.textContent = text;
       bodyEl.appendChild(msg);
-      persistMessage('user', text);
+      persistMessage('user', { type: 'text', content: text });
+      bodyEl.scrollTop = bodyEl.scrollHeight;
     }
-    function showUserMessageImage(src) {
+
+    function showUserMessageImage(file) {
+      const blobUrl = URL.createObjectURL(file);
       const wrapper = document.createElement('div');
       wrapper.className = 'pipepal-msg pipepal-user';
       const img = document.createElement('img');
-      img.src = src;
-      img.onload = () => URL.revokeObjectURL(src);
+      img.src = blobUrl;
+      img.onload = () => URL.revokeObjectURL(blobUrl);
       img.style.maxWidth = '200px';
       img.style.borderRadius = '4px';
       img.style.margin = '8px 0';
       wrapper.appendChild(img);
       bodyEl.appendChild(wrapper);
-      persistMessage('user', wrapper.innerHTML);
+      // **no persistence for images**
+      bodyEl.scrollTop = bodyEl.scrollHeight;
     }
+
     function showBotMessage(html, isHTML=false, shouldSpeak=true) {
       const msg = document.createElement('div');
       msg.className = 'pipepal-msg pipepal-bot';
       if (isHTML) msg.innerHTML = html;
       else        msg.textContent = html;
       bodyEl.appendChild(msg);
-      persistMessage('bot', isHTML ? html : msg.textContent);
+      persistMessage('bot', { type: 'bot', content: html, isHTML });
       if (shouldSpeak) speakText(isHTML ? msg.textContent : html);
+      bodyEl.scrollTop = bodyEl.scrollHeight;
     }
+
     function renderHistory() {
-      loadHistory().forEach(({ role, html }) => {
-        const el = document.createElement('div');
-        el.className = `pipepal-msg pipepal-${role}`;
-        el.innerHTML = html;
-        bodyEl.appendChild(el);
+      loadHistory().forEach(({ role, data }) => {
+        if (role === 'user') {
+          if (data.type === 'text') {
+            const m = document.createElement('div');
+            m.className = 'pipepal-msg pipepal-user';
+            m.textContent = data.content;
+            bodyEl.appendChild(m);
+          }
+          // skip images (transient)
+        } else if (role === 'bot') {
+          const m = document.createElement('div');
+          m.className = 'pipepal-msg pipepal-bot';
+          if (data.isHTML) m.innerHTML = data.content;
+          else             m.textContent = data.content;
+          bodyEl.appendChild(m);
+        }
       });
+      bodyEl.scrollTop = bodyEl.scrollHeight;
     }
 
     // ── GREETING ────────────────────────────────────────────────────────────────
@@ -155,29 +177,24 @@
       btn.addEventListener('click', () => {
         const txt = btn.textContent.trim();
         const intent = quickMap[txt];
-        // appointment flow
         if (intent === 'appointment') {
           context.IntentName = 'appointment';
           context.State      = 'APPT_NAME';
           showBotMessage("Sure—what's your full name?");
-          return;
         }
-        // connect human
-        if (intent === 'connect_human') {
+        else if (intent === 'connect_human') {
           showBotMessage('One moment—connecting you to a live agent…');
           forwardToTech('Live Agent');
-          return;
         }
-        // emergency
-        if (intent === 'emergency') {
+        else if (intent === 'emergency') {
           showBotMessage('Connecting you directly to our 24/7 emergency line…', false);
           forwardToTech('Emergency');
           window.location.href = 'tel:5203332121';
-          return;
         }
-        // fallback: treat as text
-        inputField.value = txt;
-        sendBtn.click();
+        else {
+          inputField.value = txt;
+          sendBtn.click();
+        }
       });
     });
 
@@ -199,15 +216,15 @@
     inputField.addEventListener('keypress', e => e.key === 'Enter' && sendBtn.click());
     sendBtn.addEventListener('click', processUserInput);
 
-    // ── LIFECYCLE ───────────────────────────────────────────────────────────────
+    // ── INIT ───────────────────────────────────────────────────────────────────
     renderHistory();
     greetUser();
 
-    // ── FORWARD TO TECH ─────────────────────────────────────────────────────────
+    // ── TECH FORWARDING ─────────────────────────────────────────────────────────
     function forwardToTech(notes) {
       const fd = new FormData();
       ['Issue','CustomerID','Phone','Email','Name']
-        .forEach(k => fd.append(k, context[k]||''));  
+        .forEach(k => fd.append(k, context[k] || ''));
       fd.append('notes', notes || '');
       if (fileInput.files[0]) fd.append('imageFile', fileInput.files[0]);
       fetch(TECH_WEBHOOK, { method: 'POST', body: fd })
@@ -240,39 +257,42 @@
       const text = inputField.value.trim();
       inputField.value = '';
 
-      // 1) echo user content
+      // echo image if present
       if (fileInput.files[0]) {
-        const blobUrl = URL.createObjectURL(fileInput.files[0]);
-        showUserMessageImage(blobUrl);
+        showUserMessageImage(fileInput.files[0]);
       }
+      // echo text
       if (text) {
         showUserMessageText(text);
       }
 
-      // 2) appointment sub-flow
+      // appointment flow
       if (context.State.startsWith('APPT_')) {
         return handleAppointmentFlow(text);
       }
 
-      // 3) build payload
+      // build payload
       const fd = new FormData();
-      if (text)                   fd.append('message', text);
-      if (fileInput.files[0])     fd.append('imageFile', fileInput.files[0]);
+      if (text)               fd.append('message', text);
+      if (fileInput.files[0]) fd.append('imageFile', fileInput.files[0]);
       fd.append('context', JSON.stringify(context));
 
-      // 4) call your AI webhook
       try {
         const res = await fetch(WEBHOOK_URL, { method: 'POST', body: fd });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const txt = await res.text();
         let data = {};
-        try { data = JSON.parse(txt); } catch { console.warn('Malformed JSON:', txt); }
+        try { data = JSON.parse(txt); }
+        catch { console.warn('Malformed JSON:', txt); }
         if (Array.isArray(data)) data = data[0] || {};
 
-        // emergency response
+        // emergency
         if (data.emergencyType) {
           showBotMessage(`🚨 ${data.emergencyType} Emergency!`);
-          showBotMessage('<a href="tel:5203332121" class="pipepal-emergency-btn">📞 Call Now</a>', true);
+          showBotMessage(
+            '<a href="tel:5203332121" class="pipepal-emergency-btn">📞 Call Now</a>',
+            true
+          );
           forwardToTech(text);
           return;
         }
@@ -286,7 +306,7 @@
         showBotMessage(`⚠️ Error: ${err.message}`, false);
       }
 
-      // clear file from next round
+      // clear upload
       fileInput.value = '';
     }
   }
@@ -294,5 +314,5 @@
   // ── EXPORT & GLOBAL ──────────────────────────────────────────────────────────
   const PipePal = { init: initPipepal };
   window.PipePal = PipePal;
-  // document.addEventListener('DOMContentLoaded', initPipepal);
+  document.addEventListener('DOMContentLoaded', initPipepal);
 })();
