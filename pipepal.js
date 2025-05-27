@@ -135,23 +135,36 @@
       bodyEl.scrollTop = bodyEl.scrollHeight;
     }
 
+    // ── UPDATED renderHistory() ──────────────────────────────────────────────────
     function renderHistory() {
-      loadHistory().forEach(({ role, data }) => {
+      loadHistory().forEach(entry => {
+        if (!entry || !entry.data) return;
+        const { role, data } = entry;
+        let m = document.createElement('div');
+        m.className = `pipepal-msg pipepal-${role}`;
+
         if (role === 'user') {
+          // only text messages were persisted
           if (data.type === 'text') {
-            const m = document.createElement('div');
-            m.className = 'pipepal-msg pipepal-user';
             m.textContent = data.content;
-            bodyEl.appendChild(m);
+          } else {
+            return; // skip any non-text for user
           }
         } else if (role === 'bot') {
-          const m = document.createElement('div');
-          m.className = 'pipepal-msg pipepal-bot';
-          if (data.isHTML) m.innerHTML = data.content;
-          else             m.textContent = data.content;
-          bodyEl.appendChild(m);
+          // bot data: { type:'bot', content, isHTML }
+          if (data.isHTML) {
+            m.innerHTML = data.content;
+          } else {
+            m.textContent = data.content;
+          }
+        } else {
+          return;
         }
+
+        bodyEl.appendChild(m);
       });
+
+      // always scroll to bottom
       bodyEl.scrollTop = bodyEl.scrollHeight;
     }
 
