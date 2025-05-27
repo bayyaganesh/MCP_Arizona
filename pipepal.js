@@ -1,7 +1,7 @@
 /**
  * pipepal.js
  * Full PipePal widget implementation for Arizona Plumbing Pros
- * Author: Updated by ChatGPT
+ * Updated: honor voice toggle & strip leading emojis/icons from replies
  */
 (function() {
   // ── ENTRYPOINT ────────────────────────────────────────────────────────────────
@@ -16,44 +16,31 @@
     const USER_KEY     = 'pipepal_user_data';
 
     // ── STATE & CONTEXT ──────────────────────────────────────────────────────────
-    const context = {
-      State:           'COLLECT_ISSUE', // or APPT_NAME, APPT_PHONE, APPT_EMAIL, DONE
-      Issue:           null,
-      CustomerID:      null,
-      Phone:           null,
-      Email:           null,
-      AppointmentDate: null,
-      Name:            null,
-      IntentName:      null
-    };
+    const context = { State: 'COLLECT_ISSUE', Issue: null, CustomerID: null, Phone: null, Email: null, Name: null, IntentName: null };
+
+    // ── VOICE FLAG ────────────────────────────────────────────────────────────────
+    let voiceEnabled = true;
 
     // ── UTILS ────────────────────────────────────────────────────────────────────
-    function saveHistory(entries) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-    }
-    function loadHistory() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-      catch { return []; }
-    }
-    function saveUserData() {
-      localStorage.setItem(USER_KEY, JSON.stringify({
-        Issue:      context.Issue,
-        CustomerID: context.CustomerID,
-        Phone:      context.Phone,
-        Email:      context.Email,
-        Name:       context.Name
-      }));
-    }
-    function loadUserData() {
-      try { return JSON.parse(localStorage.getItem(USER_KEY)) || {}; }
-      catch { return {}; }
-    }
+    function saveHistory(entries) { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+    function loadHistory()   { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; } }
+    function saveUserData()  { localStorage.setItem(USER_KEY, JSON.stringify({ Issue: context.Issue, CustomerID: context.CustomerID, Phone: context.Phone, Email: context.Email, Name: context.Name })); }
+    function loadUserData()  { try { return JSON.parse(localStorage.getItem(USER_KEY)) || {}; } catch { return {}; } }
+
     function speakText(text) {
-      if (!('speechSynthesis' in window)) return;
+      if (!voiceEnabled || !('speechSynthesis' in window)) return;
       const clean = text.replace(/<[^>]+>/g, '');
       const utter = new SpeechSynthesisUtterance(clean);
       utter.lang = 'en-US';
       speechSynthesis.speak(utter);
+    }
+
+    // strip all emojis & icons at start of each line
+    function stripEmojis(str) {
+      return str
+        .split('\n')
+        .map(line => line.replace(/^[\p{Emoji_Presentation}\p{Emoji}\uFE0F\s–—:]+/u, ''))
+        .join('\n');
     }
 
     // ── DOM ELEMENTS ─────────────────────────────────────────────────────────────
@@ -67,7 +54,7 @@
     const headerEl    = document.getElementById('pipepal-header');
     let voiceToggle   = document.getElementById('pipepal-voice-toggle');
 
-    // Add voice toggle button if missing
+    // add voice toggle if missing
     if (headerEl && !voiceToggle) {
       voiceToggle = document.createElement('button');
       voiceToggle.id = 'pipepal-voice-toggle';
@@ -76,8 +63,7 @@
       headerEl.appendChild(voiceToggle);
     }
 
-    if (![toggleBtn, chatWindow, closeBtn, sendBtn, inputField, bodyEl, typingEl, voiceToggle]
-          .every(el => el)) {
+    if (![toggleBtn, chatWindow, closeBtn, sendBtn, inputField, bodyEl, typingEl, voiceToggle].every(el => el)) {
       console.warn('❌ Missing elements for PipePal widget');
       return;
     }
@@ -89,7 +75,8 @@
     // ── VOICE TOGGLE ─────────────────────────────────────────────────────────────
     voiceToggle.addEventListener('click', () => {
       if (speechSynthesis.speaking) speechSynthesis.cancel();
-      voiceToggle.textContent = voiceToggle.textContent === '🔊' ? '🔇' : '🔊';
+      voiceEnabled = !voiceEnabled;
+      voiceToggle.textContent = voiceEnabled ? '🔊' : '🔇';
     });
 
     // ── MESSAGE PERSISTENCE ───────────────────────────────────────────────────────
@@ -99,7 +86,7 @@
       saveHistory(hist);
     }
 
-    // ── MESSAGE RENDERING ─────────────────────────────────────────────────────────
+    // ── RENDER & SHOW MESSAGES ────────────────────────────────────────────────────
     function showUserMessageText(text) {
       const msg = document.createElement('div');
       msg.className = 'pipepal-msg pipepal-user';
@@ -116,55 +103,40 @@
       const img = document.createElement('img');
       img.src = blobUrl;
       img.onload = () => URL.revokeObjectURL(blobUrl);
-      img.style.maxWidth = '200px';
-      img.style.borderRadius = '4px';
-      img.style.margin = '8px 0';
       wrapper.appendChild(img);
       bodyEl.appendChild(wrapper);
       bodyEl.scrollTop = bodyEl.scrollHeight;
     }
 
-    function showBotMessage(html, isHTML=false, shouldSpeak=true) {
+    function showBotMessage(html, isHTML=false) {
+      // strip leading emojis/icons
+      const content = stripEmojis(html);
       const msg = document.createElement('div');
       msg.className = 'pipepal-msg pipepal-bot';
-      if (isHTML) msg.innerHTML = html;
-      else        msg.textContent = html;
+      if (isHTML) msg.innerHTML = content;
+      else        msg.textContent = content;
       bodyEl.appendChild(msg);
-      persistMessage('bot', { type: 'bot', content: html, isHTML });
-      if (shouldSpeak) speakText(isHTML ? msg.textContent : html);
+      persistMessage('bot', { type: 'bot', content, isHTML });
+      speakText(content);
       bodyEl.scrollTop = bodyEl.scrollHeight;
     }
 
-    // ── UPDATED renderHistory() ──────────────────────────────────────────────────
     function renderHistory() {
-      loadHistory().forEach(entry => {
-        if (!entry || !entry.data) return;
-        const { role, data } = entry;
-        let m = document.createElement('div');
-        m.className = `pipepal-msg pipepal-${role}`;
-
-        if (role === 'user') {
-          // only text messages were persisted
-          if (data.type === 'text') {
-            m.textContent = data.content;
-          } else {
-            return; // skip any non-text for user
-          }
-        } else if (role === 'bot') {
-          // bot data: { type:'bot', content, isHTML }
-          if (data.isHTML) {
-            m.innerHTML = data.content;
-          } else {
-            m.textContent = data.content;
-          }
-        } else {
-          return;
+      loadHistory().forEach(({ role, data }) => {
+        if (role === 'user' && data.type === 'text') {
+          const m = document.createElement('div');
+          m.className = 'pipepal-msg pipepal-user';
+          m.textContent = data.content;
+          bodyEl.appendChild(m);
         }
-
-        bodyEl.appendChild(m);
+        if (role === 'bot') {
+          const m = document.createElement('div');
+          m.className = 'pipepal-msg pipepal-bot';
+          if (data.isHTML) m.innerHTML = data.content;
+          else             m.textContent = data.content;
+          bodyEl.appendChild(m);
+        }
       });
-
-      // always scroll to bottom
       bodyEl.scrollTop = bodyEl.scrollHeight;
     }
 
@@ -176,30 +148,33 @@
     }
 
     // ── QUICK BUTTONS ────────────────────────────────────────────────────────────
-    const quickMap = {
-      'Book Appointment':     'appointment',
-      'Get Quote':            'price',
-      'Live Agent':           'connect_human',
-      'Plumbing Emergency':   'emergency',
-      'Electrical Emergency': 'emergency',
-      'Heating Emergency':    'emergency'
-    };
     document.querySelectorAll('.pipepal-quick-buttons button').forEach(btn => {
       btn.addEventListener('click', () => {
         const txt = btn.textContent.trim();
+        const quickMap = {
+          'Book Appointment': 'appointment',
+          'Get Quote':        'price',
+          'Live Agent':       'connect_human',
+          'Plumbing Emergency':'emergency',
+          'Electrical Emergency':'emergency',
+          'Heating Emergency':'emergency'
+        };
         const intent = quickMap[txt];
         if (intent === 'appointment') {
           context.IntentName = 'appointment';
           context.State      = 'APPT_NAME';
           showBotMessage("Sure—what's your full name?");
-        } else if (intent === 'connect_human') {
+        }
+        else if (intent === 'connect_human') {
           showBotMessage('One moment—connecting you to a live agent…');
           forwardToTech('Live Agent');
-        } else if (intent === 'emergency') {
-          showBotMessage('Connecting you directly to our 24/7 emergency line…', false);
+        }
+        else if (intent === 'emergency') {
+          showBotMessage('Redirecting you to our 24/7 emergency line…');
           forwardToTech('Emergency');
           window.location.href = 'tel:5203332121';
-        } else {
+        }
+        else {
           inputField.value = txt;
           sendBtn.click();
         }
@@ -212,6 +187,7 @@
     fileInput.accept  = 'image/*,.pdf';
     fileInput.style.display = 'none';
     document.body.appendChild(fileInput);
+
     window.openPhotoDiagnosis = () => {
       chatWindow.classList.remove('pipepal-hidden');
       fileInput.click();
@@ -224,60 +200,74 @@
     inputField.addEventListener('keypress', e => e.key === 'Enter' && sendBtn.click());
     sendBtn.addEventListener('click', processUserInput);
 
-    // ── INIT ───────────────────────────────────────────────────────────────────
+    // ── LIFECYCLE ───────────────────────────────────────────────────────────────
     renderHistory();
     greetUser();
 
-    // ── TECH FORWARDING ─────────────────────────────────────────────────────────
+    // ── TECH FORWARD ────────────────────────────────────────────────────────────
     function forwardToTech(notes) {
       const fd = new FormData();
-      ['Issue','CustomerID','Phone','Email','Name']
-        .forEach(k => fd.append(k, context[k] || ''));
+      ['Issue','CustomerID','Phone','Email','Name'].forEach(k => fd.append(k, context[k] || ''));
       fd.append('notes', notes || '');
       if (fileInput.files[0]) fd.append('imageFile', fileInput.files[0]);
       fetch(TECH_WEBHOOK, { method: 'POST', body: fd })
-        .then(() => console.log('📩 Ticket sent to tech'))
+        .then(() => console.log('📩 Ticket sent'))
         .catch(console.warn);
     }
+// ── APPT FLOW ───────────────────────────────────────────────────────────────
+async function handleAppointmentFlow(answer) {
+  if (context.State === 'APPT_NAME') {
+    context.Name  = answer;
+    context.State = 'APPT_PHONE';
+    showBotMessage('Thanks! Can I get your phone number?');
 
-    // ── APPOINTMENT FLOW ────────────────────────────────────────────────────────
-    async function handleAppointmentFlow(answer) {
-      if (context.State === 'APPT_NAME') {
-        context.Name  = answer;
-        context.State = 'APPT_PHONE';
-        showBotMessage('Thanks! Can I get your phone number?');
-      } else if (context.State === 'APPT_PHONE') {
-        context.Phone = answer;
-        context.State = 'APPT_EMAIL';
-        showBotMessage("Great—what's your email?");
-      } else if (context.State === 'APPT_EMAIL') {
-        context.Email = answer;
-        showBotMessage('All set! Here’s your booking link:');
-        showBotMessage('<a href="https://yourbooking.link" target="_blank">📅 Book an Appointment</a>', true);
-        context.State = 'DONE';
-      }
+  } else if (context.State === 'APPT_PHONE') {
+    context.Phone = answer;
+    context.State = 'APPT_EMAIL';
+    showBotMessage("Great—what's your email?");
+
+  } else if (context.State === 'APPT_EMAIL') {
+    context.Email = answer;
+
+    // 🚀 Send the collected lead to your appointment endpoint
+    try {
+      await fetch(APPT_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:  context.Name,
+          phone: context.Phone,
+          email: context.Email,
+          issue: context.Issue
+        })
+      });
+      console.log('📩 Appointment lead logged');
+    } catch (err) {
+      console.warn('❌ Failed to log appointment lead:', err);
     }
+
+    // then show the booking link
+    showBotMessage('All set! Here’s your booking link:');
+    showBotMessage(
+      '<a href="https://yourbooking.link" target="_blank">📅 Book an Appointment</a>',
+      true
+    );
+    context.State = 'DONE';
+  }
+}
 
     // ── MAIN PROCESS ────────────────────────────────────────────────────────────
     async function processUserInput() {
       const text = inputField.value.trim();
       inputField.value = '';
 
-      // echo image if present
-      if (fileInput.files[0]) {
-        showUserMessageImage(fileInput.files[0]);
-      }
-      // echo text
-      if (text) {
-        showUserMessageText(text);
-      }
+      if (fileInput.files[0]) showUserMessageImage(fileInput.files[0]);
+      if (text) showUserMessageText(text);
 
-      // appointment flow
       if (context.State.startsWith('APPT_')) {
         return handleAppointmentFlow(text);
       }
 
-      // build payload
       const fd = new FormData();
       if (text)               fd.append('message', text);
       if (fileInput.files[0]) fd.append('imageFile', fileInput.files[0]);
@@ -291,23 +281,19 @@
         try { data = JSON.parse(txt); } catch { console.warn('Malformed JSON:', txt); }
         if (Array.isArray(data)) data = data[0] || {};
 
-        // emergency
         if (data.emergencyType) {
           showBotMessage(`🚨 ${data.emergencyType} Emergency!`);
-          showBotMessage(
-            '<a href="tel:5203332121" class="pipepal-emergency-btn">📞 Call Now</a>',
-            true
-          );
+          showBotMessage('<a href="tel:5203332121" class="pipepal-emergency-btn">📞 Call Now</a>', true);
           forwardToTech(text);
           return;
         }
 
-        // normal reply
-        const reply = data.reply || data.customerMessage || '';
+        const reply = stripEmojis(data.reply || data.customerMessage || '');
         if (reply) showBotMessage(reply, /<[^>]+>/.test(reply));
-      } catch (err) {
+      }
+      catch (err) {
         console.error('❌ Error in processUserInput:', err);
-        showBotMessage(`⚠️ Error: ${err.message}`, false);
+        showBotMessage(`⚠️ Error: ${err.message}`);
       }
     }
   }
@@ -315,5 +301,5 @@
   // ── EXPORT & GLOBAL ──────────────────────────────────────────────────────────
   const PipePal = { init: initPipepal };
   window.PipePal = PipePal;
-  // document.addEventListener('DOMContentLoaded', initPipepal);
+  document.addEventListener('DOMContentLoaded', initPipepal);
 })();
